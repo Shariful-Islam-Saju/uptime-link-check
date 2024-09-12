@@ -20,11 +20,17 @@ handler.handleReqRes = (req, res) => {
     trimmedPath,
     queryString,
     method,
-    header
+    header,
   };
   const chosenRoute = route[trimmedPath] ? route[trimmedPath] : notFoundHandler;
 
-  chosenRoute(requestObj);
+  chosenRoute(requestObj, (statusCode, payload) => {
+    statusCode = typeof statusCode === "number" ? statusCode : 500;
+    payload = typeof payload === "object" ? payload : {};
+    const payloadString = JSON.stringify(payload);
+    res.writeHead(statusCode);
+    res.end(payloadString);
+  });
 
   let reqData = "";
   req.on("data", (buffer) => {
