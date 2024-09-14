@@ -2,14 +2,9 @@ const http = require("http");
 const handler = require("./helper/handleReqRes");
 const lib = require("./lib/data");
 
-lib.update(
-  "test",
-  "newFile",
-  { name: "Shariful Islam", age: 21, roll: 532420 },
-  (err) => {
-    console.log(err);
-  }
-);
+lib.delete("test", "newFile",  (err) => {
+  console.log(err);
+});
 
 const app = {};
 app.config = {
