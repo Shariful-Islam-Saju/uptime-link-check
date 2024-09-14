@@ -1,5 +1,15 @@
 const http = require("http");
 const handler = require("./helper/handleReqRes");
+const lib = require("./lib/data");
+
+lib.create(
+  "test",
+  "newFile",
+  { name: "Shariful Islam", age: 21, friends: ["Noyon", "Ronu", "Siam"] },
+  (err) => {
+    console.log(err);
+  }
+);
 
 const app = {};
 app.config = {
