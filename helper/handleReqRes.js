@@ -24,22 +24,19 @@ handler.handleReqRes = (req, res) => {
   };
   const chosenRoute = route[trimmedPath] ? route[trimmedPath] : notFoundHandler;
 
-  chosenRoute(requestObj, (statusCode, payload) => {
-    statusCode = typeof statusCode === "number" ? statusCode : 500;
-    payload = typeof payload === "object" ? payload : {};
-    const payloadString = JSON.stringify(payload);
-    res.writeHead(statusCode);
-    res.end(payloadString);
-  });
-
   let reqData = "";
   req.on("data", (buffer) => {
     reqData += decoder.write(buffer);
   });
   req.on("end", () => {
     reqData += decoder.end();
-    res.write("This is From Server");
-    res.end();
+    chosenRoute(requestObj, (statusCode, payload) => {
+      statusCode = typeof statusCode === "number" ? statusCode : 500;
+      payload = typeof payload === "object" ? payload : {};
+      const payloadString = JSON.stringify(payload);
+      res.writeHead(statusCode);
+      res.end(payloadString);
+    });
   });
 };
 
