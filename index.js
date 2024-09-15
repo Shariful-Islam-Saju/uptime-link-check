@@ -2,10 +2,6 @@ const http = require("http");
 const handler = require("./helper/handleReqRes");
 const lib = require("./lib/data");
 
-lib.delete("test", "newFile",  (err) => {
-  console.log(err);
-});
-
 const app = {};
 app.config = {
   PORT: 5000,
