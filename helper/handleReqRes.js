@@ -4,6 +4,7 @@ const route = require("../route");
 const {
   notFoundHandler,
 } = require("../handlers/notFoundHandler/notFoundHandler");
+const { parsedJson } = require("./utilities");
 const handler = {};
 
 handler.handleReqRes = (req, res) => {
@@ -30,10 +31,13 @@ handler.handleReqRes = (req, res) => {
   });
   req.on("end", () => {
     reqData += decoder.end();
+
+    requestObj.body = parsedJson(reqData);
     chosenRoute(requestObj, (statusCode, payload) => {
       statusCode = typeof statusCode === "number" ? statusCode : 500;
       payload = typeof payload === "object" ? payload : {};
       const payloadString = JSON.stringify(payload);
+      res.setHeader("Content-Type", "application/json");
       res.writeHead(statusCode);
       res.end(payloadString);
     });
