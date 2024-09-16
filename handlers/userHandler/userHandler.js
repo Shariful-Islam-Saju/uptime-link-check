@@ -1,3 +1,4 @@
+const { hash } = require("../../helper/utilities");
 const { checkType } = require("../../helper/utilities");
 const lib = require("../../lib/data");
 
@@ -32,7 +33,27 @@ handler._user.post = (requestObj, callback) => {
   const terms = requestObj.body.terms;
 
   if (firstName && lastName && phone && password && terms) {
-    console.log(firstName, lastName, phone, password, terms);
+    lib.read("user", phone, (err) => {
+      if (err) {
+        const userObject = {
+          firstName,
+          lastName,
+          phone,
+          password: hash(password),
+        };
+        lib.create("user", phone, userObject, (err2) => {
+          if (err2) {
+            callback(500, {
+              massage: "Couldn't create file.",
+            });
+          }
+        });
+      } else {
+        callback(500, {
+          massage: "There is a Error",
+        });
+      }
+    });
   } else {
     callback(400, {
       message: "Information not Found",
