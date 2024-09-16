@@ -10,4 +10,11 @@ utilities.parsedJson = (string) => {
 
   return output;
 };
+
+utilities.checkType = (body, type, length) => {
+  const value =
+    typeof body === type && body.trim().length > length ? body : false;
+
+    return value
+};
 module.exports = utilities;

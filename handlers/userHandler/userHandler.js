@@ -1,3 +1,6 @@
+const { checkType } = require("../../helper/utilities");
+const lib = require("../../lib/data");
+
 const handler = {};
 
 handler.userHandler = (requestObj, callback) => {
@@ -22,8 +25,19 @@ handler._user.get = (requestObj, callback) => {
 };
 
 handler._user.post = (requestObj, callback) => {
-  console.log(requestObj);
-  console.log("This is post");
+  const firstName = checkType(requestObj.body.firstName, "string", 0);
+  const lastName = checkType(requestObj.body.lastName, "string", 0);
+  const phone = checkType(requestObj.body.phone, "string", 10);
+  const password = checkType(requestObj.body.password, "string", 4);
+  const terms = requestObj.body.terms;
+
+  if (firstName && lastName && phone && password && terms) {
+    console.log(firstName, lastName, phone, password, terms);
+  } else {
+    callback(400, {
+      message: "Information not Found",
+    });
+  }
 };
 
 handler._user.put = (requestObj, callback) => {
