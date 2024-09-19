@@ -8,9 +8,6 @@ handler.userHandler = (requestObj, callback) => {
   const acceptedMethod = ["get", "post", "put", "delete"];
   if (acceptedMethod.indexOf(requestObj.method) > -1) {
     handler._user[requestObj.method](requestObj, callback);
-    callback(200, {
-      message: `This is a Message From ${requestObj.method} method.`,
-    });
   } else {
     callback(405, {
       message: "Method Not Accepted",
@@ -21,8 +18,9 @@ handler.userHandler = (requestObj, callback) => {
 handler._user = {};
 
 handler._user.get = (requestObj, callback) => {
-  console.log(requestObj);
-  console.log("This is get");
+  callback(200, {
+    massage: "This is Get method",
+  });
 };
 
 handler._user.post = (requestObj, callback) => {
@@ -31,7 +29,6 @@ handler._user.post = (requestObj, callback) => {
   const phone = checkType(requestObj.body.phone, "string", 10);
   const password = checkType(requestObj.body.password, "string", 4);
   const terms = requestObj.body.terms;
-
   if (firstName && lastName && phone && password && terms) {
     lib.read("user", phone, (err) => {
       if (err) {
@@ -46,11 +43,15 @@ handler._user.post = (requestObj, callback) => {
             callback(500, {
               massage: "Couldn't create file.",
             });
+          } else {
+            callback(200, {
+              massage: "File create successfully",
+            });
           }
         });
       } else {
-        callback(500, {
-          massage: "There is a Error",
+        callback(200, {
+          massage: "File Already Exit",
         });
       }
     });
