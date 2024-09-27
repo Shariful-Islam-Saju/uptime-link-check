@@ -32,7 +32,7 @@ handler._user.get = async (requestObj, callback) => {
     lib.read("user", phone, (err, data) => {
       if (err) {
         callback(404, {
-          message: "User Not Found", // 404 Not Found
+          message: err.message || "User Not Found", // 404 Not Found
         });
       } else {
         // Parse the user data from JSON format
@@ -80,7 +80,7 @@ handler._user.post = (requestObj, callback) => {
         lib.create("user", phone, userObject, (err2) => {
           if (err2) {
             callback(500, {
-              message: "Couldn't create user file", // 500 Internal Server Error
+              message: err2.message || "Couldn't create user file", // 500 Internal Server Error
             });
           } else {
             callback(201, {
@@ -119,7 +119,7 @@ handler._user.put = (requestObj, callback) => {
     lib.read("user", phone, (err, data) => {
       if (err) {
         callback(404, {
-          message: "User Not Found", // 404 Not Found
+          message: err.message || "User Not Found", // 404 Not Found
         });
       } else {
         // Parse the existing user data
@@ -134,7 +134,7 @@ handler._user.put = (requestObj, callback) => {
         lib.update("user", phone, userData, (err2) => {
           if (err2) {
             callback(500, {
-              message: "Error updating the user", // 500 Internal Server Error
+              message: err2.message || "Error updating the user", // 500 Internal Server Error
             });
           } else {
             callback(200, {
@@ -162,7 +162,7 @@ handler._user.delete = (requestObj, callback) => {
     lib.delete("user", phone, (err) => {
       if (err) {
         callback(404, {
-          message: "User Not Found", // 404 Not Found
+          message: err.message || "User Not Found", // 404 Not Found
         });
       } else {
         callback(200, {

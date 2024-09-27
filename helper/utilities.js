@@ -14,10 +14,17 @@ utilities.parsedJson = (string) => {
 };
 
 utilities.checkType = (body, type, length) => {
-  const value =
-    typeof body === type && body.trim().length > length ? body : false;
+  if (type === "string") {
+    const value =
+      typeof body === type && body.trim().length > length ? body : false;
 
-  return value;
+    return value;
+  } else if (type === 'boolean') {
+     const value =
+       typeof body === type ? body : false;
+
+     return value;
+  }
 };
 
 utilities.hash = (str) => {
