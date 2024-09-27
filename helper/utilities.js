@@ -31,4 +31,22 @@ utilities.hash = (str) => {
 
   return false;
 };
+
+utilities.randomKey = (stringLength) => {
+  if (typeof stringLength !== "number" || stringLength <= 0) {
+    return false;
+  }
+
+  const characters =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let randomString = "";
+
+  for (let i = 0; i < stringLength; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    randomString += characters[randomIndex];
+  }
+
+  return randomString;
+};
+
 module.exports = utilities;
