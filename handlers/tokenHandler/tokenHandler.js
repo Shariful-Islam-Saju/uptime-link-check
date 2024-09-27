@@ -1,5 +1,10 @@
 // Dependencies
-const { checkType, hash, randomKey, parsedJson } = require("../../helper/utilities"); // Data type validation function
+const {
+  checkType,
+  hash,
+  randomKey,
+  parsedJson,
+} = require("../../helper/utilities"); // Data type validation function
 const lib = require("../../lib/data"); // File operations library for reading/writing
 
 // Handler for managing token-related operations
@@ -21,7 +26,26 @@ handler.token = {};
 
 // GET method for retrieving token details
 handler.token.get = async (requestObj, callback) => {
-  // Logic for fetching token data
+  const id = checkType(requestObj.queryString.id, "string", 30);
+
+  if (id) {
+    // Fetch user data by phone number
+    lib.read("token", id, (err, data) => {
+      if (err) {
+        callback(404, {
+          message: "User Not Found", // 404 Not Found
+        });
+      } else {
+        // Return the user object without the password
+        callback(200, parsedJson(data));
+      }
+    });
+  } else {
+    // If the phone number is missing, return a 400 error
+    callback(400, {
+      message: "Not valid Url", // 400 Bad Request
+    });
+  }
 };
 
 // POST method for creating new tokens (authentication)
