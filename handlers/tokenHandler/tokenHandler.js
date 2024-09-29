@@ -149,13 +149,19 @@ handler.token.delete = async (requestObj, callback) => {
   });
 };
 
-// Utility function for sending placeholder responses
-function sendRes(method, statusCode, callback) {
-  // Send a response indicating which HTTP method was called
-  callback(statusCode, {
-    error: `This is ${method} Method`, // Placeholder error message
-  });
-}
-
+handler.verifyToken = (id, phone, callback) => {
+  if (id && phone) {
+    lib.read("token", id, (err, tokenData) => {
+      const tokenObject = parsedJson(tokenData);
+      if (tokenObject.phone === phone && tokenObject.expire > Date.now()) {
+        callback(true);
+      } else {
+        callback(false);
+      }
+    });
+  } else {
+    callback(false);
+  }
+};
 // Export the handler for use in other modules
 module.exports = handler;

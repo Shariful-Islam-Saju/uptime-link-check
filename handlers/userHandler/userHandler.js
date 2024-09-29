@@ -2,6 +2,7 @@
 const { hash, parsedJson } = require("../../helper/utilities"); // Helper functions for hashing and JSON parsing
 const { checkType } = require("../../helper/utilities"); // Function to validate data types
 const lib = require("../../lib/data"); // Library for file operations
+const tokenHandler = require("../tokenHandler/tokenHandler");
 
 // Handler object
 const handler = {};
@@ -26,27 +27,36 @@ handler._user = {};
 // Requires 'phone' as a query parameter to fetch the user's data
 handler._user.get = async (requestObj, callback) => {
   const phone = checkType(requestObj.queryString.phone, "string", 10);
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
 
   if (phone) {
-    // Fetch user data by phone number
-    lib.read("user", phone, (err, data) => {
-      if (err) {
-        callback(404, {
-          message: err.message || "User Not Found", // 404 Not Found
+    tokenHandler.verifyToken(tokenId, phone, (result) => {
+      if (result) {
+        lib.read("user", phone, (err, data) => {
+          if (err) {
+            callback(404, {
+              message: err.message || "User Not Found", // 404 Not Found
+            });
+          } else {
+            // Parse the user data from JSON format
+            const userWithPassword = parsedJson(data);
+
+            // Remove the password field before returning the data
+            delete userWithPassword.password;
+
+            // Return the user object without the password
+            callback(200, {
+              message: userWithPassword, // 200 OK
+            });
+          }
         });
       } else {
-        // Parse the user data from JSON format
-        const userWithPassword = parsedJson(data);
-
-        // Remove the password field before returning the data
-        delete userWithPassword.password;
-
-        // Return the user object without the password
-        callback(200, {
-          message: userWithPassword, // 200 OK
+        callback(403, {
+          error: "Authentication Failure!!!",
         });
       }
     });
+    // Fetch user data by phone number
   } else {
     // If the phone number is missing, return a 400 error
     callback(400, {
@@ -63,6 +73,7 @@ handler._user.post = (requestObj, callback) => {
   const phone = checkType(requestObj.body.phone, "string", 10);
   const password = checkType(requestObj.body.password, "string", 4);
   const terms = requestObj.body.terms;
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
 
   // Ensure all required fields are present
   if (firstName && lastName && phone && password && terms) {
@@ -107,6 +118,7 @@ handler._user.post = (requestObj, callback) => {
 // Requires phone to identify the user, and optionally allows updates to firstName, lastName, and password
 handler._user.put = (requestObj, callback) => {
   const phone = checkType(requestObj.body.phone, "string", 10);
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
 
   // Ensure the phone number is present (required to identify the user)
   if (phone) {
@@ -116,31 +128,40 @@ handler._user.put = (requestObj, callback) => {
     const password = checkType(requestObj.body.password, "string", 4);
 
     // Read the existing user data
-    lib.read("user", phone, (err, data) => {
-      if (err) {
-        callback(404, {
-          message: err.message || "User Not Found", // 404 Not Found
-        });
-      } else {
-        // Parse the existing user data
-        const userData = parsedJson(data);
 
-        // Update only the fields that are provided
-        if (firstName) userData.firstName = firstName;
-        if (lastName) userData.lastName = lastName;
-        if (password) userData.password = hash(password);
-
-        // Save the updated user data
-        lib.update("user", phone, userData, (err2) => {
-          if (err2) {
-            callback(500, {
-              message: err2.message || "Error updating the user", // 500 Internal Server Error
+    tokenHandler.verifyToken(tokenId, phone, (result) => {
+      if (result) {
+        lib.read("user", phone, (err, data) => {
+          if (err) {
+            callback(404, {
+              message: err.message || "User Not Found", // 404 Not Found
             });
           } else {
-            callback(200, {
-              message: "User updated successfully", // 200 OK
+            // Parse the existing user data
+            const userData = parsedJson(data);
+
+            // Update only the fields that are provided
+            if (firstName) userData.firstName = firstName;
+            if (lastName) userData.lastName = lastName;
+            if (password) userData.password = hash(password);
+
+            // Save the updated user data
+            lib.update("user", phone, userData, (err2) => {
+              if (err2) {
+                callback(500, {
+                  message: err2.message || "Error updating the user", // 500 Internal Server Error
+                });
+              } else {
+                callback(200, {
+                  message: "User updated successfully", // 200 OK
+                });
+              }
             });
           }
+        });
+      } else {
+        callback(403, {
+          error: "Authentication Failure!!!",
         });
       }
     });
@@ -156,17 +177,26 @@ handler._user.put = (requestObj, callback) => {
 // Requires phone in the request body to identify and delete the user
 handler._user.delete = (requestObj, callback) => {
   const phone = checkType(requestObj.body.phone, "string", 10);
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
 
   if (phone) {
     // Delete user data by phone number
-    lib.delete("user", phone, (err) => {
-      if (err) {
-        callback(404, {
-          message: err.message || "User Not Found", // 404 Not Found
+    tokenHandler.verifyToken(tokenId, phone, (result) => {
+      if (result) {
+        lib.delete("user", phone, (err) => {
+          if (err) {
+            callback(404, {
+              message: err.message || "User Not Found", // 404 Not Found
+            });
+          } else {
+            callback(200, {
+              message: "User deleted successfully", // 200 OK
+            });
+          }
         });
       } else {
-        callback(200, {
-          message: "User deleted successfully", // 200 OK
+        callback(403, {
+          error: "Authentication Failure!!!",
         });
       }
     });
