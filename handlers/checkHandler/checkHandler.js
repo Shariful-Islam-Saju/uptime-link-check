@@ -18,7 +18,26 @@ handler.checkHandler = (requestObj, callback) => {
 handler._checkHandler = {};
 
 handler._checkHandler.get = (requestObj, callback) => {
-  testFunction("Get", callback);
+  const checkId = checkType(requestObj.queryString.id, "string", 20);
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
+  lib.read("checks", checkId, (err, checkData) => {
+    if (!err && checkData) {
+      const checkObject = parsedJson(checkData);
+      tokenHandler.verifyToken(tokenId, checkObject.phone, (res) => {
+        if (res) {
+          callback(200, checkObject);
+        } else {
+          callback(400, {
+            error: "Token Expire!!!",
+          });
+        }
+      });
+    } else {
+      callback(404, {
+        error: err || "User Not Found",
+      });
+    }
+  });
 };
 
 handler._checkHandler.post = (requestObj, callback) => {
@@ -96,7 +115,7 @@ handler._checkHandler.post = (requestObj, callback) => {
               }
             });
           } else {
-            callback(404, { error: err });
+            callback(404, { error: "Login Session Over!!!" });
           }
         });
       } else {
