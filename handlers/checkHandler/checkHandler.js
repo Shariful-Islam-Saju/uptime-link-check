@@ -1,26 +1,22 @@
-// Dependencies
-const { hash, parsedJson, checkType } = require("../../helper/utilities"); // Helper functions for hashing and JSON parsing
-const lib = require("../../lib/data"); // Library for file operations
+const { parsedJson, checkType, randomKey } = require("../../helper/utilities");
+const lib = require("../../lib/data");
 const tokenHandler = require("../tokenHandler/tokenHandler");
-// Handler object
+
 const handler = {};
 
-// Main user handler function
-// This function checks if the requested HTTP method is valid and calls the appropriate sub-method
+// Main user handler based on HTTP methods
 handler.checkHandler = (requestObj, callback) => {
   const acceptedMethods = ["get", "post", "put", "delete"];
   if (acceptedMethods.includes(requestObj.method)) {
     handler._checkHandler[requestObj.method](requestObj, callback);
   } else {
-    callback(405, { message: "Method Not Accepted" }); // 405 Method Not Allowed
+    callback(405, { message: "Method Not Accepted" });
   }
 };
 
-// Container for the user sub-methods (GET, POST, PUT, DELETE)
+// Methods for GET, POST, PUT, DELETE
 handler._checkHandler = {};
 
-// GET method for users (retrieve user data)
-// Requires 'phone' as a query parameter to fetch the user's data
 handler._checkHandler.get = (requestObj, callback) => {
   testFunction("Get", callback);
 };
@@ -28,32 +24,26 @@ handler._checkHandler.get = (requestObj, callback) => {
 handler._checkHandler.post = (requestObj, callback) => {
   const protocol =
     checkType(requestObj.body.protocol, "string", 0) &&
-    ["http", "https"].indexOf(requestObj.body.protocol) > -1
+    ["http", "https"].includes(requestObj.body.protocol)
       ? requestObj.body.protocol
       : false;
-
   const url = checkType(requestObj.body.url, "string", 0);
   const method =
     checkType(requestObj.body.method, "string", 0) &&
-    ["get", "post", "put", "delete"].indexOf(requestObj.body.method) > -1
+    ["get", "post", "put", "delete"].includes(requestObj.body.method)
       ? requestObj.body.method
       : false;
-
-  const successCodes =
-    typeof requestObj.body.successCodes === "object" &&
-    requestObj.body.successCodes instanceof Array
-      ? requestObj.body.successCodes
-      : false;
-
+  const successCodes = Array.isArray(requestObj.body.successCodes)
+    ? requestObj.body.successCodes
+    : false;
   const timeOutSeconds =
-    typeof requestObj.body.timeOutSeconds === "number" &&
-    requestObj.body.timeOutSeconds % 1 === 0 &&
+    Number.isInteger(requestObj.body.timeOutSeconds) &&
     requestObj.body.timeOutSeconds >= 1 &&
     requestObj.body.timeOutSeconds <= 5
       ? requestObj.body.timeOutSeconds
       : false;
 
-  if (protocol && method && successCodes && timeOutSeconds && url) {
+  if (protocol && url && method && successCodes && timeOutSeconds) {
     const tokenId = checkType(requestObj.header.tokenid, "string", 30);
     lib.read("token", tokenId, (err, tokenData) => {
       if (!err && tokenData) {
@@ -61,47 +51,73 @@ handler._checkHandler.post = (requestObj, callback) => {
         tokenHandler.verifyToken(tokenId, userPhone, (tokenRes) => {
           if (tokenRes) {
             lib.read("user", userPhone, (err2, userData) => {
-              const userObject = parsedJson(userData);
-              if (!err2) {
-                callback(200, userObject);
-              } else {
-                callback(404, { error: err2 });
+              if (!err2 && userData) {
+                const userObject = parsedJson(userData);
+                const userChecks = Array.isArray(userObject.checks)
+                  ? userObject.checks
+                  : [];
+
+                if (userChecks.length <= 5) {
+                  const checkId = randomKey(30);
+                  const checkObject = {
+                    id: checkId,
+                    protocol,
+                    phone: userPhone,
+                    url,
+                    method,
+                    successCodes,
+                    timeOutSeconds,
+                  };
+                  lib.create("checks", checkId, checkObject, (err3) => {
+                    if (!err3) {
+                      userObject.checks = userChecks;
+                      userObject.checks.push(checkObject);
+
+                      lib.update("user", userPhone, userObject, (err4) => {
+                        if (!err4) {
+                          callback(201, {
+                            userObject,
+                          });
+                        } else {
+                          callback(500, {
+                            error: err4,
+                          });
+                        }
+                      });
+                    } else {
+                      callback(500, {
+                        error: err3,
+                      });
+                    }
+                  });
+                } else {
+                  callback(403, { error: "Max checks exceeded" });
+                }
               }
             });
           } else {
-            callback(404, {
-              error: "Please ReLogin!!!",
-            });
+            callback(404, { error: err });
           }
         });
       } else {
-        callback(404, {
-          error: "User Not Found!!!",
-        });
+        callback(404, { error: "User Not Found!" });
       }
     });
   } else {
-    callback(400, {
-      error: "Not vaild Info!!!",
-    });
+    callback(400, { error: "Invalid Info!" });
   }
 };
 
-// PUT method for users (update existing user)
-// Requires phone to identify the user, and optionally allows updates to firstName, lastName, and password
 handler._checkHandler.put = (requestObj, callback) => {
   testFunction("Put", callback);
 };
 
-// DELETE method for users (delete existing user)
-// Requires phone in the request body to identify and delete the user
 handler._checkHandler.delete = (requestObj, callback) => {
   testFunction("Delete", callback);
 };
 
-testFunction = (method, callback) => {
-  callback(200, {
-    text: `This is ${method} method!`,
-  });
+const testFunction = (method, callback) => {
+  callback(200, { text: `This is ${method} method!` });
 };
+
 module.exports = handler;

@@ -16,3 +16,5 @@ app.createServer = () => {
 app.handleReqRes = handler.handleReqRes;
 
 app.createServer();
+
+module.exports = app;
