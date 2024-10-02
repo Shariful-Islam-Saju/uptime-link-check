@@ -1,7 +1,7 @@
 // Dependencies
 const { hash, parsedJson, checkType } = require("../../helper/utilities"); // Helper functions for hashing and JSON parsing
 const lib = require("../../lib/data"); // Library for file operations
-
+const tokenHandler = require("../tokenHandler/tokenHandler");
 // Handler object
 const handler = {};
 
@@ -52,13 +52,39 @@ handler._checkHandler.post = (requestObj, callback) => {
     requestObj.body.timeOutSeconds <= 5
       ? requestObj.body.timeOutSeconds
       : false;
-  callback(201, {
-    protocol,
-    method,
-    successCodes,
-    timeOutSeconds,
-    url,
-  });
+
+  if (protocol && method && successCodes && timeOutSeconds && url) {
+    const tokenId = checkType(requestObj.header.tokenid, "string", 30);
+    lib.read("token", tokenId, (err, tokenData) => {
+      if (!err && tokenData) {
+        const userPhone = parsedJson(tokenData).phone;
+        tokenHandler.verifyToken(tokenId, userPhone, (tokenRes) => {
+          if (tokenRes) {
+            lib.read("user", userPhone, (err2, userData) => {
+              const userObject = parsedJson(userData);
+              if (!err2) {
+                callback(200, userObject);
+              } else {
+                callback(404, { error: err2 });
+              }
+            });
+          } else {
+            callback(404, {
+              error: "Please ReLogin!!!",
+            });
+          }
+        });
+      } else {
+        callback(404, {
+          error: "User Not Found!!!",
+        });
+      }
+    });
+  } else {
+    callback(400, {
+      error: "Not vaild Info!!!",
+    });
+  }
 };
 
 // PUT method for users (update existing user)
