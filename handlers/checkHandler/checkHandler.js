@@ -206,11 +206,89 @@ handler._checkHandler.put = (requestObj, callback) => {
 };
 
 handler._checkHandler.delete = (requestObj, callback) => {
-  testFunction("Delete", callback);
-};
+  // Step 1: Extract and validate 'id' and 'tokenId'
+  const id = checkType(requestObj.queryString.id, "string", 20);
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
 
-const testFunction = (method, callback) => {
-  callback(200, { text: `This is ${method} method!` });
+  // Step 2: Check if 'id' and 'tokenId' are valid
+  if (id && tokenId) {
+    // Step 3: Read the check from the database
+    lib.read("checks", id, (err, checksInfo) => {
+      if (!err && checksInfo) {
+        const checksObject = parsedJson(checksInfo);
+
+        // Step 4: Verify token to make sure the user is authorized to delete
+        tokenHandler.verifyToken(tokenId, checksObject.phone, (res) => {
+          if (res) {
+            // Step 5: Proceed with deletion of the check
+            lib.delete("checks", id, (err2) => {
+              if (!err2) {
+                // Step 6: Fetch user data to remove the check from user's check list
+                lib.read("user", checksObject.phone, (err3, userData) => {
+                  if (!err3 && userData) {
+                    const userObject = parsedJson(userData);
+                    const userChecks = Array.isArray(userObject.checks)
+                      ? userObject.checks
+                      : [];
+
+                    const checkIndex = userChecks.indexOf(id);
+                    
+                    if (checkIndex > -1) {
+                      // Step 7: Remove check from user's checks array
+                      userChecks.splice(checkIndex, 1);
+                      userObject.checks = userChecks;
+
+                      // Step 8: Update the user's record in the database
+                      lib.update(
+                        "user",
+                        checksObject.phone,
+                        userObject,
+                        (updateErr) => {
+                          if (!updateErr) {
+                            callback(200, {
+                              message: "Check deleted successfully",
+                            });
+                          } else {
+                            callback(500, {
+                              error: "Failed to update user data",
+                            });
+                          }
+                        }
+                      );
+                    } else {
+                      callback(404, {
+                        error: "Check not found in user's account",
+                      });
+                    }
+                  } else {
+                    callback(500, {
+                      error: "Failed to retrieve user data",
+                    });
+                  }
+                });
+              } else {
+                callback(500, {
+                  error: "Failed to delete check",
+                });
+              }
+            });
+          } else {
+            callback(403, {
+              error: "Unauthorized access. Token verification failed.",
+            });
+          }
+        });
+      } else {
+        callback(404, {
+          error: "Check not found",
+        });
+      }
+    });
+  } else {
+    callback(400, {
+      error: "Missing or invalid check ID or token ID",
+    });
+  }
 };
 
 module.exports = handler;
