@@ -230,9 +230,9 @@ handler._checkHandler.delete = (requestObj, callback) => {
                     const userChecks = Array.isArray(userObject.checks)
                       ? userObject.checks
                       : [];
-
-                    const checkIndex = userChecks.indexOf(id);
-                    
+                    const checkIndex = userChecks.findIndex(
+                      (check) => check.id === id
+                    );
                     if (checkIndex > -1) {
                       // Step 7: Remove check from user's checks array
                       userChecks.splice(checkIndex, 1);
