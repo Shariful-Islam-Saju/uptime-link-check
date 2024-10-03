@@ -128,7 +128,81 @@ handler._checkHandler.post = (requestObj, callback) => {
 };
 
 handler._checkHandler.put = (requestObj, callback) => {
-  testFunction("Put", callback);
+  const checkId = checkType(requestObj.body.id, "string", 20);
+  const tokenId = checkType(requestObj.header.tokenid, "string", 30);
+
+  if (checkId && tokenId) {
+    lib.read("checks", checkId, (err, checkData) => {
+      if (!err && checkData) {
+        const checkObject = parsedJson(checkData);
+        tokenHandler.verifyToken(tokenId, checkObject.phone, (tokenRes) => {
+          if (tokenRes) {
+            // Extract new values from the request, allow partial updates
+            const protocol =
+              checkType(requestObj.body.protocol, "string", 0) &&
+              ["http", "https"].includes(requestObj.body.protocol)
+                ? requestObj.body.protocol
+                : checkObject.protocol; // Use existing value if not provided
+            const url = checkType(requestObj.body.url, "string", 0)
+              ? requestObj.body.url
+              : checkObject.url;
+            const method =
+              checkType(requestObj.body.method, "string", 0) &&
+              ["get", "post", "put", "delete"].includes(requestObj.body.method)
+                ? requestObj.body.method
+                : checkObject.method;
+            const successCodes = Array.isArray(requestObj.body.successCodes)
+              ? requestObj.body.successCodes
+              : checkObject.successCodes;
+            const timeOutSeconds =
+              Number.isInteger(requestObj.body.timeOutSeconds) &&
+              requestObj.body.timeOutSeconds >= 1 &&
+              requestObj.body.timeOutSeconds <= 5
+                ? requestObj.body.timeOutSeconds
+                : checkObject.timeOutSeconds;
+
+            // Check if at least one value is updated
+            if (
+              protocol !== checkObject.protocol ||
+              url !== checkObject.url ||
+              method !== checkObject.method ||
+              successCodes !== checkObject.successCodes ||
+              timeOutSeconds !== checkObject.timeOutSeconds
+            ) {
+              // Update the check object
+              const updatedCheck = {
+                ...checkObject,
+                protocol,
+                url,
+                method,
+                successCodes,
+                timeOutSeconds,
+              };
+
+              lib.update("checks", checkId, updatedCheck, (updateErr) => {
+                if (!updateErr) {
+                  callback(200, {
+                    message: "Check updated successfully",
+                    updatedCheck,
+                  });
+                } else {
+                  callback(500, { error: "Failed to update check" });
+                }
+              });
+            } else {
+              callback(400, { error: "No new fields to update" });
+            }
+          } else {
+            callback(403, { error: "Invalid or expired token" });
+          }
+        });
+      } else {
+        callback(404, { error: "Check not found" });
+      }
+    });
+  } else {
+    callback(400, { error: "Missing or invalid check ID or token ID" });
+  }
 };
 
 handler._checkHandler.delete = (requestObj, callback) => {
