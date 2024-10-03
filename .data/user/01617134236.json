@@ -1,8 +1,1 @@
-{
-  "firstName": "Shariful",
-  "lastName": "Islam",
-  "phone": "01617134236",
-  "password": "9b58feee8fe0f30a0706b12d39cea76e5bb9b01ac8109382990d08f776894a5c",
-  "terms": true,
-  "checks": []
-}
+{"firstName":"Shariful","lastName":"Islam","phone":"01617134236","password":"9b58feee8fe0f30a0706b12d39cea76e5bb9b01ac8109382990d08f776894a5c","terms":true,"checks":[{"id":"WXFTQjUKnNXBze1BQ6QUdIOmiw85hH","protocol":"http","phone":"01617134236","url":"No Url","method":"get","successCodes":[200,201],"timeOutSeconds":3}]}
