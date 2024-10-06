@@ -1,0 +1,9 @@
+{
+  "id": "0RCw7aPVtDrhY1XPhfc3MVr90tc5WI",
+  "protocol": "http",
+  "phone": "01617134236",
+  "url": "https://ui.shadcn.com/docs/installation/next",
+  "method": "get",
+  "successCodes": [200, 201],
+  "timeOutSeconds": 3
+}
