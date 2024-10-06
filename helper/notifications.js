@@ -1,9 +1,8 @@
 const https = require("https");
 const notifications = {};
 const { checkType } = require("./utilities");
-const authToken = process.env.AUTH_TOKEN;
-const accountSid = process.env.ACCOUNT_SID;
-
+const authToken = "b077a080c6c32f58904f464ea9d09157";
+const accountSid = "ACd2148e5491d7a301223cac68a6d60c15";
 notifications.sendTwilioSms = (phone, msg, callback) => {
   const userPhone = checkType(phone, "string", 10);
   const userMsg = checkType(msg, "string", 0);
